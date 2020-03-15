@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <!-- Bootstrap File -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+
+    <style>
+        .head {
+            background-color: rgb(39, 39, 51);
+            color: honeydew;
+            text-align: center;
+            padding:  15px;
+        }
+        .city{
+            padding-top:20px ;
+            padding-bottom: 15px;
+        }
+        .details{
+            margin-top: 5px;
+            margin-bottom: 5px;
+            padding-bottom: 10px;
+        }
+        .cardForecast{
+            width: 10rem; 
+            height: 12rem;
+            background-color: rgb(0, 123, 255) ;
+            margin-right: 25px;
+            }
+        .Ftext{
+            color: white; 
+            padding-top:10px ;
+            padding-left: 2px;
+        }
+        .ForecastIcon{
+            height: 50px;
+            width: 50px;
+        }   
+
+    </style>
+</head>
+<body>
+
+    <div class="jumbotron head" >
+        <h1>
+            Weather Dashboard
+        </h1>
+    </div>
+
+    <div class="row col-12">
+        <!-- Search col -->
+
+        <div class="col-3">
+            <h4>
+                Search City:
+            </h4>
+            <div class="input-group mb-1">
+                <input type="text" class="form-control col-6" placeholder="Search City" aria-label="" aria-describedby="basic-addon1" id="CityInput" >
+                <div class="input-group-apend">
+                  <button class="btn btn-primary" type="button" id="SearchBtn"><span class="fa fa-search"></span></button>
+                </div> 
+            </div>
+
+            <!-- Search History -->
+            <div class = "row col-12" id="Search History" style="margin-top: 30px; padding-top: 15px;">
+                <div class="card" style="width: 25rem;">
+            <!-- History Track -->
+                    <ul class="list-group list-group-flush" id="HistoryTrack">
+                      
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- City Display -->
+        <div class="col-9">
+            <div class="row">
+                <div class="card col-12">
+                    <h2 class="city">  </h2>
+                    <div class="details">Temperature: <span id="Temperature"> </span></div>
+                    <div  class="details">Humidity: <span id="Humidity"> </span> </div>
+                    <div class="details">Wind Speed: <span id="WindSpeed"> </span> </div>
+                    <div class="details">UV Index: <span id="UvIndex"> </span> </div>
+                </div>
+            </div>
+
+            <div class="row" style="padding-top: 20px;padding-bottom: 10px;">
+                <h3>5 Day Forecast: </h3>
+            </div>
+
+            <!-- Cards -->
+            <div class="row col-12" id="ForecastCard">
+      
+            </div>
+
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+    <script type="text/javascript">
+
+        /* Set Storage Key */
+        var HistorySearch = []
+        var WeatherH = "WeatherHistory"
+
+        var StringHistorySearch = localStorage.getItem(WeatherH)
+        var ObjectHistorySearch = JSON.parse(StringHistorySearch);
+
+        function BuildHistory() {
+            if (localStorage.getItem(WeatherH) === null) {
+            
+          } else {
+            for (i=0 ; i< ObjectHistorySearch.length; i++) {
+                $("#HistoryTrack").append($("<li>").attr({"class" :" list-group-item"}).text(ObjectHistorySearch[i]))   
+            }
+          }
+        }
+        
+
+        function CallWeather() {
+            var APICity = $("#CityInput").val();
+            console.log(APICity)
+            var queryURL = "https://api.openweathermap.org/data/2.5/weather?q="+APICity+"&units=imperial&appid=166a433c57516f51dfab1f7edaed8413";
+
+            $.ajax({
+                url: queryURL,
+                method: "GET"
+            }).then(function(response) {
+                 console.log(response)
+            
+            $(".city").empty()
+            $(".city").text($("#CityInput").val() + " ("+moment().format('LL')+")")
+            $(".city").append($("<img>").attr({alt: response.weather[0].main +" icon", src:"http://openweathermap.org/img/wn/" + response.weather[0].icon + "@2x.png", class: "ForecastIcon"}))
+            $("#HistoryTrack").append($("<li>").attr({"class" :" list-group-item"}).text(APICity))
+            
+            
+            
+            /* Today Temperature */
+            var temperature = response.main.temp
+             $("#Temperature").text(temperature +" °F")
+            
+             /* Humidity */
+             var Humidity = response.main.humidity
+             $("#Humidity").text(Humidity)
+            /* Wind */
+             var WindSpeed = response.wind.speed
+             $("#WindSpeed").text(WindSpeed)
+            
+             var LonKey = response.coord.lon
+             var LatKey = response.coord.lat
+              console.log(LonKey)
+                /* UV Index */
+                var UVQueryURL = "http://api.openweathermap.org/data/2.5/uvi?appid=166a433c57516f51dfab1f7edaed8413&lat="+LatKey+"&lon="+LonKey;
+                
+                $.ajax({
+                    url: UVQueryURL,
+                    method: "GET"
+                }).then(function (UvResponse) {
+                    var uvFactor = UvResponse.value
+                    if (uvFactor < 2) {
+                    $("#UvIndex").attr({"class" :"bg-success text-white "}).text(uvFactor)
+                    } else if (uvFactor>2 && uvFactor<6) {
+                    $("#UvIndex").attr({"class" :"bg-warning text-white "}).text(uvFactor)
+                    } else if (uvFactor>6 && uvFactor<10) {
+                    $("#UvIndex").attr({"class" :"bg-danger text-white "}).text(uvFactor)
+                    } else {
+                    $("#UvIndex").attr({"class" :"bg-dark text-white "}).text(uvFactor)
+                    }
+                })
+
+            });            
+            /* Forecast */
+            var ForecastQueryURL = "https://api.openweathermap.org/data/2.5/forecast/daily?q="+APICity+"&units=imperial&cnt=6&appid=166a433c57516f51dfab1f7edaed8413"
+            
+            $.ajax({
+                url: ForecastQueryURL,
+                method: "GET"
+            }).then(function(back) {
+            
+                console.log(back)
+                /* Loop Creating the cards */
+                $("#ForecastCard").empty();
+                
+                for (var i = 1; i <6; i++) {
+
+            
+                var $img = $("<img>").attr({alt: back.list[i].weather[0].main +" icon", src:"http://openweathermap.org/img/wn/" + back.list[i].weather[0].icon + "@2x.png", class: "ForecastIcon"})
+                var VarCardForecast =  $("<div>").attr({"class" :"card cardForecast "}, )
+                var VarDateForecast = $("<div>").attr({"class" :"card-title Ftext"}).text(moment().add(i, 'days').format('LL'))
+                var VarTempForecast = $("<div>").attr({"class" :"card-text Ftext"}).text("Temp: "+back.list[i].temp.day+" °F")
+                var VarHumidityForecast= $("<div>").attr({"class" :"card-text Ftext"}).text("Humidity: "+back.list[i].humidity+"%")
+                $("#ForecastCard").append(VarCardForecast)
+                $(VarCardForecast).append(VarDateForecast,$img, VarTempForecast,VarHumidityForecast)
+                }
+                
+                HistorySearch.push(APICity)
+                StringHistorySearch = JSON.stringify(HistorySearch)
+                localStorage.setItem(WeatherH,StringHistorySearch)
+
+            });
+            
+
+        }
+        
+        BuildHistory();
+
+        
+
+
+        $("#SearchBtn").on("click",CallWeather)
+
+    </script>
+ 
+
+</body>
+
+</html>
